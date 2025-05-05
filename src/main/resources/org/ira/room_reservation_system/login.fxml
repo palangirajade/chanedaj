@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.*?>
+
+<!-- Professional, clean login screen -->
+<StackPane xmlns:fx="http://javafx.com/fxml"
+           fx:controller="org.ira.room_reservation_system.LoginController"
+           style="-fx-background-color: linear-gradient(to bottom, #f4f6fb, #e9ecf3);">
+    <VBox alignment="CENTER" spacing="0">
+        <Region minHeight="40" />
+        <VBox alignment="CENTER" spacing="18" maxWidth="340"
+              style="-fx-background-color: white; -fx-background-radius: 14; -fx-effect: dropshadow(gaussian, #b0b4c1, 12, 0.18, 0, 4); -fx-padding: 36 32 32 32;">
+            <!-- Optional logo/icon -->
+            <!-- <ImageView fitHeight="48" fitWidth="48" pickOnBounds="true" preserveRatio="true" image="@logo.png" /> -->
+            <Label text="Room Reservation System"
+                   style="-fx-font-size: 22px; -fx-font-family: 'Segoe UI', 'Arial', sans-serif; -fx-font-weight: bold; -fx-text-fill: #2d3559; -fx-padding: 0 0 8 0;" />
+            <TextField fx:id="usernameField" promptText="Username"
+                      style="-fx-background-radius: 7; -fx-font-size: 15px; -fx-padding: 8; -fx-background-color: #f4f6fb; -fx-border-color: #d1d5e7; -fx-border-radius: 7;" />
+            <PasswordField fx:id="passwordField" promptText="Password"
+                           style="-fx-background-radius: 7; -fx-font-size: 15px; -fx-padding: 8; -fx-background-color: #f4f6fb; -fx-border-color: #d1d5e7; -fx-border-radius: 7;" />
+            <Button text="Login" onAction="#onLogin"
+                    style="-fx-background-color: linear-gradient(to right, #4e54c8, #8f94fb); -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 7; -fx-padding: 8 0; -fx-font-size: 15px; -fx-cursor: hand;" maxWidth="Infinity" />
+            <Button text="Sign Up" onAction="#onSignUp"
+                    style="-fx-background-color: transparent; -fx-text-fill: #4e54c8; -fx-font-weight: bold; -fx-background-radius: 7; -fx-padding: 8 0; -fx-font-size: 15px; -fx-cursor: hand;" maxWidth="Infinity" />
+            <Label fx:id="messageLabel" textFill="#e74c3c" style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-padding: 6 0 0 0;" />
+        </VBox>
+        <Region minHeight="40" />
+    </VBox>
+</StackPane>
