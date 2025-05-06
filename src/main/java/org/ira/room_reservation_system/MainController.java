@@ -19,6 +19,9 @@ import java.util.List;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 public class MainController {
     @FXML
@@ -27,6 +30,8 @@ public class MainController {
     private TextField roomCapacityField;
     @FXML
     private FlowPane roomListPane;
+    @FXML
+    private HBox buttonBar;
 
     private final List<Room> rooms = new ArrayList<>();
     private Room selectedRoom = null;
@@ -48,9 +53,40 @@ public class MainController {
         public void setStatus(String status) { this.status = status; }
     }
 
-    @FXML
     public void initialize() {
+        LoginController.loadBookings();
         refreshRoomList();
+        updateRoomStatusesByBooking();
+        if (LoginController.currentRole != null && LoginController.currentRole.equalsIgnoreCase("staff")) {
+            disableAdminButtons();
+        }
+    }
+
+    private void disableAdminButtons() {
+        for (javafx.scene.Node node : buttonBar.getChildren()) {
+            if (node instanceof Button) {
+                Button btn = (Button) node;
+                String text = btn.getText().toLowerCase();
+                if (text.contains("add") || text.contains("update") || text.contains("delete")) {
+                    btn.setDisable(true);
+                }
+            }
+        }
+    }
+
+    private void updateRoomStatusesByBooking() {
+        LocalDateTime now = LocalDateTime.now().withSecond(0).withNano(0);
+        for (Room room : rooms) {
+            boolean occupied = false;
+            for (LoginController.Booking booking : LoginController.bookings) {
+                if (booking.roomName.equals(room.getName()) &&
+                    booking.dateTime.isEqual(now)) {
+                    occupied = true;
+                    break;
+                }
+            }
+            room.setStatus(occupied ? "Occupied" : room.getStatus());
+        }
     }
 
     @FXML
@@ -213,12 +249,62 @@ public class MainController {
                 ? "-fx-background-color: #eafaf1; -fx-text-fill: #27ae60;"
                 : "-fx-background-color: #fff4e6; -fx-text-fill: #e67e22;"));
 
+        // Booking indicator
+        boolean hasBooking = false;
+        for (LoginController.Booking booking : LoginController.bookings) {
+            if (booking.roomName.equals(room.getName())) {
+                hasBooking = true;
+                break;
+            }
+        }
+        Label bookingIndicator = null;
+        if (hasBooking) {
+            bookingIndicator = new Label("Booked");
+            bookingIndicator.setStyle("-fx-background-color: #4e54c8; -fx-text-fill: white; -fx-font-size: 11px; -fx-font-weight: bold; -fx-background-radius: 6; -fx-padding: 2 8; -fx-alignment: center;");
+        }
+
+        Button bookBtn = new Button("Book");
+        bookBtn.setStyle("-fx-background-color: #4e54c8; -fx-text-fill: white; -fx-background-radius: 7; -fx-font-size: 13px; -fx-font-weight: bold; -fx-cursor: hand;");
+        bookBtn.setOnAction(e -> showBookingDialog(room));
+        if (room.getStatus().equalsIgnoreCase("Occupied")) bookBtn.setDisable(true);
+
         card.getChildren().addAll(nameLabel, capLabel, statusLabel);
+        if (bookingIndicator != null) card.getChildren().add(bookingIndicator);
+        card.getChildren().add(bookBtn);
         card.setOnMouseClicked((MouseEvent e) -> {
             selectedRoom = room;
             highlightSelectedCard(card);
         });
         return card;
+    }
+
+    private void showBookingDialog(Room room) {
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("Book Room: " + room.getName());
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+        DatePicker datePicker = new DatePicker(LocalDate.now());
+        Spinner<Integer> hourSpinner = new Spinner<>(0, 23, LocalDateTime.now().getHour());
+        hourSpinner.setEditable(true);
+        Spinner<Integer> minuteSpinner = new Spinner<>(0, 59, LocalDateTime.now().getMinute());
+        minuteSpinner.setEditable(true);
+        VBox vbox = new VBox(10, new Label("Date:"), datePicker, new Label("Hour (0-23):"), hourSpinner, new Label("Minute (0-59):"), minuteSpinner);
+        dialog.getDialogPane().setContent(vbox);
+        dialog.setResultConverter(btn -> {
+            if (btn == ButtonType.OK) {
+                LocalDate date = datePicker.getValue();
+                int hour = hourSpinner.getValue();
+                int minute = minuteSpinner.getValue();
+                if (date != null) {
+                    LocalTime time = LocalTime.of(hour, minute);
+                    LocalDateTime bookingTime = LocalDateTime.of(date, time);
+                    LoginController.addBooking(room.getName(), bookingTime);
+                    updateRoomStatusesByBooking();
+                    refreshRoomList();
+                }
+            }
+            return null;
+        });
+        dialog.showAndWait();
     }
 
     private void highlightSelectedCard(VBox selectedCard) {

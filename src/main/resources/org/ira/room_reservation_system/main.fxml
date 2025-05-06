@@ -10,7 +10,7 @@
            style="-fx-background-color: linear-gradient(to bottom, #f4f6fb, #e9ecf3);">
     <VBox alignment="TOP_CENTER" spacing="18" maxWidth="1000">
         <Region minHeight="30" />
-        <HBox spacing="12" alignment="CENTER"
+        <HBox fx:id="buttonBar" spacing="12" alignment="CENTER"
               style="-fx-background-color: white; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, #b0b4c1, 8, 0.12, 0, 2); -fx-padding: 18 24;">
             <Button text="Add" onAction="#onAddRoom"
                     style="-fx-background-color: linear-gradient(to right, #4e54c8, #8f94fb); -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 7; -fx-font-size: 14px; -fx-cursor: hand;" />

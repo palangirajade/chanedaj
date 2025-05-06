@@ -21,6 +21,7 @@
                       style="-fx-background-radius: 7; -fx-font-size: 15px; -fx-padding: 8; -fx-background-color: #f4f6fb; -fx-border-color: #d1d5e7; -fx-border-radius: 7;" />
             <PasswordField fx:id="passwordField" promptText="Password"
                            style="-fx-background-radius: 7; -fx-font-size: 15px; -fx-padding: 8; -fx-background-color: #f4f6fb; -fx-border-color: #d1d5e7; -fx-border-radius: 7;" />
+            <ComboBox fx:id="roleComboBox" promptText="Role" style="-fx-background-radius: 8; -fx-font-size: 15px; -fx-padding: 8; -fx-background-color: #f5f6fa;" />
             <Button text="Login" onAction="#onLogin"
                     style="-fx-background-color: linear-gradient(to right, #4e54c8, #8f94fb); -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 7; -fx-padding: 8 0; -fx-font-size: 15px; -fx-cursor: hand;" maxWidth="Infinity" />
             <Button text="Sign Up" onAction="#onSignUp"
