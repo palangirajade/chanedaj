@@ -4,29 +4,38 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
 
-<!-- Professional, clean login screen -->
+<!-- Navy blue themed login screen -->
 <StackPane xmlns:fx="http://javafx.com/fxml"
            fx:controller="org.ira.room_reservation_system.LoginController"
-           style="-fx-background-color: linear-gradient(to bottom, #f4f6fb, #e9ecf3);">
+           style="-fx-background-color: linear-gradient(to bottom, #0a192f, #172a45);">
     <VBox alignment="CENTER" spacing="0">
         <Region minHeight="40" />
-        <VBox alignment="CENTER" spacing="18" maxWidth="340"
-              style="-fx-background-color: white; -fx-background-radius: 14; -fx-effect: dropshadow(gaussian, #b0b4c1, 12, 0.18, 0, 4); -fx-padding: 36 32 32 32;">
-            <!-- Optional logo/icon -->
-            <!-- <ImageView fitHeight="48" fitWidth="48" pickOnBounds="true" preserveRatio="true" image="@logo.png" /> -->
-            <Label text="Room Reservation System"
-                   style="-fx-font-size: 22px; -fx-font-family: 'Segoe UI', 'Arial', sans-serif; -fx-font-weight: bold; -fx-text-fill: #2d3559; -fx-padding: 0 0 8 0;" />
+        <VBox alignment="CENTER" spacing="22" maxWidth="360"
+              style="-fx-background-color: white; -fx-background-radius: 8; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 15, 0.15, 0, 3); -fx-padding: 40 35 35 35;">
+            <!-- University label -->
+            <Label text="UNIVERSITY OF CEBU" 
+                   style="-fx-font-size: 16px; -fx-font-family: 'Segoe UI', 'Arial', sans-serif; -fx-font-weight: bold; -fx-text-fill: #0a192f;" />            <Label text="Room Reservation System"
+                   style="-fx-font-size: 22px; -fx-font-family: 'Segoe UI', 'Arial', sans-serif; -fx-font-weight: 600; -fx-text-fill: #0a192f; -fx-padding: 0 0 12 0;" />
+            
             <TextField fx:id="usernameField" promptText="Username"
-                      style="-fx-background-radius: 7; -fx-font-size: 15px; -fx-padding: 8; -fx-background-color: #f4f6fb; -fx-border-color: #d1d5e7; -fx-border-radius: 7;" />
+                      style="-fx-background-radius: 5; -fx-font-size: 14px; -fx-padding: 10 12; -fx-background-color: #f8f9fa; -fx-border-color: #cbd5e0; -fx-border-radius: 5; -fx-prompt-text-fill: #718096;" />
+            
             <PasswordField fx:id="passwordField" promptText="Password"
-                           style="-fx-background-radius: 7; -fx-font-size: 15px; -fx-padding: 8; -fx-background-color: #f4f6fb; -fx-border-color: #d1d5e7; -fx-border-radius: 7;" />
-            <ComboBox fx:id="roleComboBox" promptText="Role" style="-fx-background-radius: 8; -fx-font-size: 15px; -fx-padding: 8; -fx-background-color: #f5f6fa;" />
+                           style="-fx-background-radius: 5; -fx-font-size: 14px; -fx-padding: 10 12; -fx-background-color: #f8f9fa; -fx-border-color: #cbd5e0; -fx-border-radius: 5; -fx-prompt-text-fill: #718096;" />
+            
+            <ComboBox fx:id="roleComboBox" promptText="Select Role" 
+                      style="-fx-background-radius: 5; -fx-font-size: 14px; -fx-padding: 8 10; -fx-background-color: #f8f9fa; -fx-border-color: #cbd5e0; -fx-border-radius: 5; -fx-prompt-text-fill: #718096;" />
+            
+            <Region minHeight="5" />
+            
             <Button text="Login" onAction="#onLogin"
-                    style="-fx-background-color: linear-gradient(to right, #4e54c8, #8f94fb); -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 7; -fx-padding: 8 0; -fx-font-size: 15px; -fx-cursor: hand;" maxWidth="Infinity" />
+                    style="-fx-background-color: #1a365d; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 5; -fx-padding: 12 0; -fx-font-size: 14px; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 3, 0.1, 0, 1);" maxWidth="Infinity" />
+            
             <Button text="Sign Up" onAction="#onSignUp"
-                    style="-fx-background-color: transparent; -fx-text-fill: #4e54c8; -fx-font-weight: bold; -fx-background-radius: 7; -fx-padding: 8 0; -fx-font-size: 15px; -fx-cursor: hand;" maxWidth="Infinity" />
-            <Label fx:id="messageLabel" textFill="#e74c3c" style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-padding: 6 0 0 0;" />
+                    style="-fx-background-color: transparent; -fx-text-fill: #1a365d; -fx-font-weight: bold; -fx-background-radius: 5; -fx-padding: 10 0; -fx-font-size: 14px; -fx-cursor: hand; -fx-border-color: #1a365d; -fx-border-radius: 5; -fx-border-width: 1;" maxWidth="Infinity" />
+            <Label fx:id="messageLabel" textFill="#dc3545" style="-fx-font-size: 13px; -fx-font-weight: normal; -fx-padding: 6 0 0 0;" />
         </VBox>
         <Region minHeight="40" />
     </VBox>

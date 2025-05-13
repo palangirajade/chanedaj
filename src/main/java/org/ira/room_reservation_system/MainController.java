@@ -234,20 +234,22 @@ public class MainController {
 
     private VBox createRoomCard(Room room) {
         VBox card = new VBox(8);
-        card.setPadding(new Insets(16));
-        card.setSpacing(6);
-        card.setPrefWidth(180);
-        card.setStyle("-fx-background-color: white; -fx-background-radius: 10; -fx-effect: dropshadow(gaussian, #b0b4c1, 6, 0.10, 0, 2); -fx-cursor: hand; -fx-border-color: transparent;");
+        card.setPadding(new Insets(18));
+        card.setSpacing(8);
+        card.setPrefWidth(200);
+        card.setStyle("-fx-background-color: white; -fx-background-radius: 8; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 10, 0.12, 0, 2); -fx-cursor: hand; -fx-border-color: transparent;");
 
         Label nameLabel = new Label(room.getName());
-        nameLabel.setStyle("-fx-font-size: 16px; -fx-font-family: 'Segoe UI', 'Arial', sans-serif; -fx-font-weight: bold; -fx-text-fill: #2d3559;");
+        nameLabel.setStyle("-fx-font-size: 18px; -fx-font-family: 'Segoe UI', 'Arial', sans-serif; -fx-font-weight: 600; -fx-text-fill: #0a192f;");
+        
         Label capLabel = new Label("Capacity: " + room.getCapacity());
-        capLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #4e54c8;");
+        capLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #4a5568; -fx-padding: 2 0;");
+        
         Label statusLabel = new Label(room.getStatus());
-        statusLabel.setStyle("-fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 6; -fx-padding: 2 8;" +
+        statusLabel.setStyle("-fx-font-size: 13px; -fx-font-weight: normal; -fx-background-radius: 4; -fx-padding: 4 10;" +
             (room.getStatus().equalsIgnoreCase("Vacant")
-                ? "-fx-background-color: #eafaf1; -fx-text-fill: #27ae60;"
-                : "-fx-background-color: #fff4e6; -fx-text-fill: #e67e22;"));
+                ? "-fx-background-color: #e6f6ff; -fx-text-fill: #2b6cb0;"
+                : "-fx-background-color: #fff3e0; -fx-text-fill: #e65100;"));
 
         // Booking indicator
         boolean hasBooking = false;
@@ -260,17 +262,31 @@ public class MainController {
         Label bookingIndicator = null;
         if (hasBooking) {
             bookingIndicator = new Label("Booked");
-            bookingIndicator.setStyle("-fx-background-color: #4e54c8; -fx-text-fill: white; -fx-font-size: 11px; -fx-font-weight: bold; -fx-background-radius: 6; -fx-padding: 2 8; -fx-alignment: center;");
+            bookingIndicator.setStyle("-fx-background-color: #1a365d; -fx-text-fill: white; -fx-font-size: 12px; -fx-font-weight: normal; -fx-background-radius: 4; -fx-padding: 4 10; -fx-alignment: center;");
         }
 
-        Button bookBtn = new Button("Book");
-        bookBtn.setStyle("-fx-background-color: #4e54c8; -fx-text-fill: white; -fx-background-radius: 7; -fx-font-size: 13px; -fx-font-weight: bold; -fx-cursor: hand;");
-        bookBtn.setOnAction(e -> showBookingDialog(room));
-        if (room.getStatus().equalsIgnoreCase("Occupied")) bookBtn.setDisable(true);
+        Region spacer = new Region();
+        spacer.setMinHeight(15);
 
-        card.getChildren().addAll(nameLabel, capLabel, statusLabel);
-        if (bookingIndicator != null) card.getChildren().add(bookingIndicator);
-        card.getChildren().add(bookBtn);
+        Button bookBtn = new Button("Book Room");
+        bookBtn.setPrefWidth(150);
+        bookBtn.setStyle("-fx-background-color: #1a365d; -fx-text-fill: white; -fx-background-radius: 4; -fx-font-size: 13px; -fx-font-weight: bold; -fx-cursor: hand; -fx-padding: 8 0; -fx-min-width: 100;");
+        bookBtn.setOnAction(e -> showBookingDialog(room));
+        if (room.getStatus().equalsIgnoreCase("Occupied")) {
+            bookBtn.setDisable(true);
+            bookBtn.setStyle("-fx-background-color: #90a4ae; -fx-text-fill: white; -fx-background-radius: 4; -fx-font-size: 13px; -fx-font-weight: bold; -fx-cursor: default; -fx-padding: 8 0; -fx-min-width: 100;");
+        }
+
+        // Create status container
+        HBox statusContainer = new HBox(8);
+        statusContainer.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        statusContainer.getChildren().add(statusLabel);
+        if (bookingIndicator != null) {
+            statusContainer.getChildren().add(bookingIndicator);
+        }
+        
+        card.getChildren().addAll(nameLabel, capLabel, statusContainer, spacer, bookBtn);
+        
         card.setOnMouseClicked((MouseEvent e) -> {
             selectedRoom = room;
             highlightSelectedCard(card);
@@ -282,13 +298,56 @@ public class MainController {
         Dialog<Void> dialog = new Dialog<>();
         dialog.setTitle("Book Room: " + room.getName());
         dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+        
+        // Style dialog buttons with navy blue
+        dialog.getDialogPane().lookupButton(ButtonType.OK).setStyle("-fx-background-color: #1a365d; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 20;");
+        dialog.getDialogPane().lookupButton(ButtonType.CANCEL).setStyle("-fx-text-fill: #4a5568; -fx-padding: 8 20;");
+        dialog.getDialogPane().setStyle("-fx-background-color: white; -fx-padding: 15;");
+        
         DatePicker datePicker = new DatePicker(LocalDate.now());
+        datePicker.setStyle("-fx-background-color: #f8f9fa; -fx-border-color: #cbd5e0; -fx-border-radius: 4; -fx-padding: 4;");
+        datePicker.setPrefWidth(200);
+        
         Spinner<Integer> hourSpinner = new Spinner<>(0, 23, LocalDateTime.now().getHour());
         hourSpinner.setEditable(true);
+        hourSpinner.setStyle("-fx-background-color: #f8f9fa; -fx-border-color: #cbd5e0; -fx-border-radius: 4;");
+        hourSpinner.setPrefWidth(200);
+        
         Spinner<Integer> minuteSpinner = new Spinner<>(0, 59, LocalDateTime.now().getMinute());
         minuteSpinner.setEditable(true);
-        VBox vbox = new VBox(10, new Label("Date:"), datePicker, new Label("Hour (0-23):"), hourSpinner, new Label("Minute (0-59):"), minuteSpinner);
+        minuteSpinner.setStyle("-fx-background-color: #f8f9fa; -fx-border-color: #cbd5e0; -fx-border-radius: 4;");
+        minuteSpinner.setPrefWidth(200);
+        
+        Label titleLabel = new Label("UNIVERSITY OF CEBU");
+        titleLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #0a192f; -fx-padding: 0 0 5 0;");
+        
+        Label subtitleLabel = new Label("Room Booking");
+        subtitleLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #1a365d; -fx-padding: 0 0 15 0;");
+        
+        Label roomInfoLabel = new Label("Room: " + room.getName() + " (Capacity: " + room.getCapacity() + ")");
+        roomInfoLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #2d3748; -fx-font-weight: bold;");
+        
+        // Labels for fields with consistent navy blue styling
+        Label dateLabel = new Label("Select Date:");
+        dateLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #2d3748;");
+        
+        Label hourLabel = new Label("Hour (0-23):");
+        hourLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #2d3748;");
+        
+        Label minuteLabel = new Label("Minute (0-59):");
+        minuteLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #2d3748;");
+        
+        VBox vbox = new VBox(8, titleLabel, subtitleLabel, roomInfoLabel, 
+                            new Separator(), 
+                            dateLabel, datePicker, 
+                            hourLabel, hourSpinner, 
+                            minuteLabel, minuteSpinner);
+        vbox.setPadding(new Insets(15));
         dialog.getDialogPane().setContent(vbox);
+        // Set minimum dialog width for better appearance
+        dialog.getDialogPane().setPrefWidth(320);
+        dialog.getDialogPane().setMinHeight(400);
+        
         dialog.setResultConverter(btn -> {
             if (btn == ButtonType.OK) {
                 LocalDate date = datePicker.getValue();
@@ -300,6 +359,15 @@ public class MainController {
                     LoginController.addBooking(room.getName(), bookingTime);
                     updateRoomStatusesByBooking();
                     refreshRoomList();
+                    
+                    // Show success confirmation
+                    Alert success = new Alert(Alert.AlertType.INFORMATION);
+                    success.setTitle("Booking Confirmed");
+                    success.setHeaderText(null);
+                    success.setContentText("Room " + room.getName() + " has been successfully booked.");
+                    ((Stage) success.getDialogPane().getScene().getWindow()).getIcons().add(null);
+                    success.getDialogPane().setStyle("-fx-background-color: white;");
+                    success.showAndWait();
                 }
             }
             return null;
@@ -308,10 +376,13 @@ public class MainController {
     }
 
     private void highlightSelectedCard(VBox selectedCard) {
+        // Reset all cards to default style
         for (javafx.scene.Node node : roomListPane.getChildren()) {
-            node.setStyle("-fx-background-color: white; -fx-background-radius: 10; -fx-effect: dropshadow(gaussian, #b0b4c1, 6, 0.10, 0, 2); -fx-cursor: hand; -fx-border-color: transparent;");
+            node.setStyle("-fx-background-color: white; -fx-background-radius: 8; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 10, 0.12, 0, 2); -fx-cursor: hand; -fx-border-color: transparent;");
         }
-        selectedCard.setStyle("-fx-background-color: linear-gradient(to right, #e0e7ff, #f4f6fb); -fx-background-radius: 10; -fx-effect: dropshadow(gaussian, #4e54c8, 8, 0.18, 0, 2); -fx-cursor: hand; -fx-border-color: #4e54c8; -fx-border-width: 2; -fx-border-radius: 10;");
+        
+        // Apply selected style with subtle gradient and border - navy blue accent
+        selectedCard.setStyle("-fx-background-color: linear-gradient(to bottom, white, #f0f5fa); -fx-background-radius: 8; -fx-effect: dropshadow(gaussian, rgba(10,25,47,0.3), 12, 0.2, 0, 3); -fx-cursor: hand; -fx-border-color: #1a365d; -fx-border-width: 2; -fx-border-radius: 8;");
     }
 
     private void clearFields() {
@@ -320,6 +391,11 @@ public class MainController {
 
     private void showAlert(String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR, message, ButtonType.OK);
+        alert.setHeaderText(null);
+        alert.setTitle("Error");
+        alert.getDialogPane().setStyle("-fx-background-color: white;");
+        ((Button) alert.getDialogPane().lookupButton(ButtonType.OK)).setStyle(
+            "-fx-background-color: #1a365d; -fx-text-fill: white; -fx-font-weight: bold;");
         alert.showAndWait();
     }
 
@@ -332,8 +408,25 @@ public class MainController {
         public RoomDialog(Room room) {
             setTitle(room == null ? "Add Room" : "Update Room");
             setHeaderText(null);
-            ButtonType okButtonType = new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
+            ButtonType okButtonType = new ButtonType("Save", ButtonBar.ButtonData.OK_DONE);
             getDialogPane().getButtonTypes().addAll(okButtonType, ButtonType.CANCEL);
+            
+            // Style dialog buttons with navy blue
+            getDialogPane().lookupButton(okButtonType).setStyle("-fx-background-color: #1a365d; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 20;");
+            getDialogPane().lookupButton(ButtonType.CANCEL).setStyle("-fx-text-fill: #4a5568; -fx-padding: 8 20;");
+            getDialogPane().setStyle("-fx-background-color: white; -fx-padding: 15;");
+            
+            // Style the controls with navy blue accents
+            nameField.setPromptText("Enter room name");
+            nameField.setStyle("-fx-background-color: #f8f9fa; -fx-border-color: #cbd5e0; -fx-border-radius: 4; -fx-padding: 8;");
+            nameField.setPrefWidth(200);
+            
+            capacityField.setPromptText("Enter capacity");
+            capacityField.setStyle("-fx-background-color: #f8f9fa; -fx-border-color: #cbd5e0; -fx-border-radius: 4; -fx-padding: 8;");
+            capacityField.setPrefWidth(200);
+            
+            statusBox.setStyle("-fx-background-color: #f8f9fa; -fx-border-color: #cbd5e0; -fx-border-radius: 4; -fx-padding: 4;");
+            statusBox.setPrefWidth(200);
 
             statusBox.getItems().addAll("Vacant", "Occupied");
             if (room != null) {
@@ -344,33 +437,80 @@ public class MainController {
                 statusBox.setValue("Vacant");
             }
 
-            GridPane grid = new GridPane();
-            grid.setHgap(10);
-            grid.setVgap(10);
-            grid.setPadding(new Insets(20, 150, 10, 10));
-            grid.add(new Label("Room Name:"), 0, 0);
-            grid.add(nameField, 1, 0);
-            grid.add(new Label("Capacity:"), 0, 1);
-            grid.add(capacityField, 1, 1);
-            grid.add(new Label("Status:"), 0, 2);
-            grid.add(statusBox, 1, 2);
-            getDialogPane().setContent(grid);
+            VBox content = new VBox(12);
+            content.setPadding(new Insets(15));
+            
+            // Title and header with navy blue colors
+            Label titleLabel = new Label("UNIVERSITY OF CEBU");
+            titleLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #0a192f; -fx-padding: 0 0 5 0;");
+            
+            Label subtitleLabel = new Label(room == null ? "Add New Room" : "Update Room Details");
+            subtitleLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #1a365d; -fx-padding: 0 0 15 0;");
+            
+            content.getChildren().addAll(titleLabel, subtitleLabel, new Separator());
+            
+            // Form fields with navy blue text
+            Label nameLabel = new Label("Room Name:");
+            nameLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #2d3748;");
+            content.getChildren().addAll(nameLabel, nameField);
+            
+            Label capacityLabel = new Label("Capacity:");
+            capacityLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #2d3748;");
+            content.getChildren().addAll(capacityLabel, capacityField);
+            
+            Label statusLabel = new Label("Status:");
+            statusLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #2d3748;");
+            content.getChildren().addAll(statusLabel, statusBox);
+            
+            getDialogPane().setPrefWidth(320);
+            getDialogPane().setContent(content);
 
             setResultConverter(dialogButton -> {
                 if (dialogButton == okButtonType) {
                     String name = nameField.getText().trim();
                     String capStr = capacityField.getText().trim();
                     String status = statusBox.getValue();
-                    if (name.isEmpty() || capStr.isEmpty() || status == null) return null;
+                    
+                    // Validate inputs
+                    if (name.isEmpty()) {
+                        showValidationError("Room name is required.");
+                        return null;
+                    }
+                    
+                    if (capStr.isEmpty()) {
+                        showValidationError("Capacity is required.");
+                        return null;
+                    }
+                    
+                    if (status == null) {
+                        showValidationError("Status selection is required.");
+                        return null;
+                    }
+                    
                     try {
                         int capacity = Integer.parseInt(capStr);
+                        if (capacity <= 0) {
+                            showValidationError("Capacity must be a positive number.");
+                            return null;
+                        }
                         return new Room(name, capacity, status);
                     } catch (NumberFormatException e) {
+                        showValidationError("Capacity must be a valid number.");
                         return null;
                     }
                 }
                 return null;
             });
+        }
+        
+        // Validation error helper
+        private void showValidationError(String message) {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Validation Error");
+            alert.setHeaderText(null);
+            alert.setContentText(message);
+            alert.getDialogPane().setStyle("-fx-background-color: white;");
+            alert.showAndWait();
         }
     }
 }
