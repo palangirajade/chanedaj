@@ -34,21 +34,16 @@ public class LoginController {
     private PasswordField passwordField;
     @FXML
     private Label messageLabel;
+    @FXML
+    private ComboBox<String> roleComboBox;
 
     private static final String USERS_FILE = "src/main/resources/org/ira/room_reservation_system/users.csv";
-    private static final Map<String, String> users = new HashMap<>();
-    private static boolean usersLoaded = false;
-
-    private static final String BOOKINGS_FILE = "src/main/resources/org/ira/room_reservation_system/bookings.csv";
-    private static final DateTimeFormatter BOOKING_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm");
+    private static final Map<String, String[]> userInfo = new HashMap<>();
+    private static boolean usersLoaded = false;    private static final String BOOKINGS_FILE = "src/main/resources/org/ira/room_reservation_system/bookings.csv";
     static final List<Booking> bookings = new ArrayList<>();
 
-    private static final Map<String, String> roles = new HashMap<>();
-    private static boolean rolesLoaded = false;
     public static String currentRole = null;
-
-    private static final String ROLES_FILE = "src/main/resources/org/ira/room_reservation_system/roles.csv";
-
+    public static String currentUser = null;
     public static class Booking {
         public String roomName;
         public LocalDateTime dateTime;
@@ -87,51 +82,58 @@ public class LoginController {
                 }
             }
         } catch (Exception ignored) {}
-    }
-
-    private void loadUsers() {
+    }    private void loadUsers() {
         if (usersLoaded) return;
         usersLoaded = true;
-        users.clear();
+        userInfo.clear();
+        
+        // Create users file with default admin if it doesn't exist
+        if (!Files.exists(Paths.get(USERS_FILE))) {
+            try {
+                Files.createDirectories(Paths.get(USERS_FILE).getParent());
+                try (BufferedWriter writer = new BufferedWriter(new FileWriter(USERS_FILE))) {
+                    writer.write("username,password,role\n");
+                    writer.write("admin,admin,admin\n"); // Default admin user
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        
         try (BufferedReader reader = new BufferedReader(new FileReader(USERS_FILE))) {
             String line;
             boolean first = true;
             while ((line = reader.readLine()) != null) {
                 if (first) { first = false; continue; }
                 String[] parts = line.split(",");
-                if (parts.length == 2) {
-                    users.put(parts[0].trim(), parts[1].trim());
+                if (parts.length >= 3) {
+                    String username = parts[0].trim();
+                    String password = parts[1].trim();
+                    String role = parts[2].trim();
+                    userInfo.put(username, new String[]{password, role});
                 }
             }
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
-    private void loadRoles() {
-        if (rolesLoaded) return;
-        rolesLoaded = true;
-        roles.clear();
-        if (!Files.exists(Paths.get(ROLES_FILE))) return;
-        try (BufferedReader reader = new BufferedReader(new FileReader(ROLES_FILE))) {
-            String line;
-            boolean first = true;
-            while ((line = reader.readLine()) != null) {
-                if (first) { first = false; continue; }
-                String[] parts = line.split(",");
-                if (parts.length == 2) {
-                    roles.put(parts[0].trim(), parts[1].trim());
-                }
+    private void saveAllUsers() {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(USERS_FILE, false))) {
+            writer.write("username,password,role\n");
+            for (Map.Entry<String, String[]> entry : userInfo.entrySet()) {
+                writer.write(String.format("%s,%s,%s\n", 
+                    entry.getKey(), entry.getValue()[0], entry.getValue()[1]));
             }
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
-    private void saveUser(String username, String password) {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(USERS_FILE, true))) {
-            writer.write(username + "," + password + "\n");
-        } catch (Exception ignored) {}
+    private void saveUser(String username, String password, String role) {
+        userInfo.put(username, new String[]{password, role});
+        saveAllUsers();
     }
-
-    @FXML
-    private ComboBox<String> roleComboBox;
 
     public void initialize() {
         if (roleComboBox != null) {
@@ -142,19 +144,26 @@ public class LoginController {
     @FXML
     private void onLogin() {
         loadUsers();
-        loadRoles();
         String username = usernameField.getText().trim();
         String password = passwordField.getText();
         String selectedRole = roleComboBox.getValue();
-        if (users.containsKey(username) && users.get(username).equals(password)) {
-            String userRole = roles.getOrDefault(username, "staff");
-            if (selectedRole == null || !selectedRole.equalsIgnoreCase(userRole)) {
-                messageLabel.setText("Role does not match user");
-                return;
+        
+        if (userInfo.containsKey(username)) {
+            String[] info = userInfo.get(username);
+            String storedPassword = info[0];
+            String userRole = info[1];
+              if (storedPassword.equals(password)) {
+                if (selectedRole == null || !selectedRole.equalsIgnoreCase(userRole)) {
+                    messageLabel.setText("Role does not match user");
+                    return;
+                }
+                currentRole = userRole;
+                currentUser = username;  // Set the current user
+                messageLabel.setText("");
+                switchToMain();
+            } else {
+                messageLabel.setText("Invalid username or password");
             }
-            currentRole = userRole;
-            messageLabel.setText("");
-            switchToMain();
         } else {
             messageLabel.setText("Invalid username or password");
         }
@@ -165,24 +174,31 @@ public class LoginController {
         loadUsers();
         String username = usernameField.getText().trim();
         String password = passwordField.getText();
+        String selectedRole = roleComboBox.getValue();
+        
         if (username.isEmpty() || password.isEmpty()) {
             messageLabel.setText("Username and password required");
             return;
         }
-        if (users.containsKey(username)) {
+        
+        if (selectedRole == null) {
+            messageLabel.setText("Please select a role");
+            return;
+        }
+        
+        if (userInfo.containsKey(username)) {
             messageLabel.setText("Username already exists");
             return;
         }
-        users.put(username, password);
-        saveUser(username, password);
+        
+        saveUser(username, password, selectedRole);
         messageLabel.setText("Sign up successful! Please log in.");
-    }
-
-    private void switchToMain() {
+    }    private void switchToMain() {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("main.fxml"));
-            Scene scene = new Scene(loader.load(), 800, 600);
+            Scene scene = new Scene(loader.load(), 1121, 761);
             Stage stage = (Stage) usernameField.getScene().getWindow();
+            stage.centerOnScreen();
             stage.setScene(scene);
             stage.setTitle("Room Reservation System");
         } catch (IOException e) {

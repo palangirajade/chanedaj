@@ -1,4 +1,4 @@
-username,password
-admin,admin123
-Staff1,123
-staff1,123
+username,password,role
+admin,admin123,admin
+Staff1,123,staff
+staff1,123,staff

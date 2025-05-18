@@ -1,12 +1,11 @@
 package org.ira.room_reservation_system;
 
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.input.MouseEvent;
 import javafx.geometry.Insets;
-import javafx.scene.paint.Color;
-import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
@@ -15,13 +14,17 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class MainController {
     @FXML
@@ -32,9 +35,15 @@ public class MainController {
     private FlowPane roomListPane;
     @FXML
     private HBox buttonBar;
-
-    private final List<Room> rooms = new ArrayList<>();
+    
+    private static final String ROOMS_FILE = "src/main/resources/org/ira/room_reservation_system/roomsMap.csv";
+    private final Map<String, Room> roomsMap = new HashMap<>();
     private Room selectedRoom = null;
+    
+    // Getter for roomsMap to allow access from DashboardController
+    public Map<String, Room> getRoomsMap() {
+        return new HashMap<>(roomsMap);
+    }
 
     public static class Room {
         private String name;
@@ -53,13 +62,39 @@ public class MainController {
         public void setStatus(String status) { this.status = status; }
     }
 
+    private Timer bookingTimer;
+
     public void initialize() {
+        loadRoomsFromCSV();
         LoginController.loadBookings();
         refreshRoomList();
         updateRoomStatusesByBooking();
         if (LoginController.currentRole != null && LoginController.currentRole.equalsIgnoreCase("staff")) {
             disableAdminButtons();
         }
+        
+        // Start a timer to check for bookings that match the current time (every minute)
+        startBookingCheckTimer();
+    }
+    
+    private void startBookingCheckTimer() {
+        bookingTimer = new Timer(true); // Set as daemon timer
+        bookingTimer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                // Run on JavaFX thread since we're updating UI
+                Platform.runLater(() -> {
+                    LocalDateTime now = LocalDateTime.now().withSecond(0).withNano(0);
+                    boolean statusChanged = checkAndUpdateRoomStatuses(roomsMap, now);
+                    
+                    if (statusChanged) {
+                        saveRoomsToCSV(); // Save status changes
+                        refreshRoomList(); // Refresh UI to show updated statuses
+                        System.out.println("Automatic refresh: Room statuses updated at " + now);
+                    }
+                });
+            }
+        }, 15000, 15000); // Check every 15 seconds (15,000 ms) for more responsive testing
     }
 
     private void disableAdminButtons() {
@@ -76,16 +111,57 @@ public class MainController {
 
     private void updateRoomStatusesByBooking() {
         LocalDateTime now = LocalDateTime.now().withSecond(0).withNano(0);
-        for (Room room : rooms) {
+        checkAndUpdateRoomStatuses(roomsMap, now);
+    }
+
+    // Static utility method that can be used by both controllers
+    public static boolean checkAndUpdateRoomStatuses(Map<String, Room> rooms, LocalDateTime currentTime) {
+        boolean statusChanged = false;
+        System.out.println("Checking room statuses at: " + currentTime);
+        
+        for (Room room : rooms.values()) {
             boolean occupied = false;
             for (LoginController.Booking booking : LoginController.bookings) {
-                if (booking.roomName.equals(room.getName()) &&
-                    booking.dateTime.isEqual(now)) {
-                    occupied = true;
-                    break;
+                if (booking.roomName.equals(room.getName())) {
+                    System.out.println("Booking for room " + room.getName() + " at " + booking.dateTime);
+                    
+                    if (booking.dateTime.isEqual(currentTime)) {
+                        occupied = true;
+                        System.out.println("Match found! Booking time matches current time.");
+                        break;
+                    }
                 }
             }
-            room.setStatus(occupied ? "Occupied" : room.getStatus());
+            
+            // Update room status to "Occupied" if booking time matches current time
+            if (occupied && !room.getStatus().equalsIgnoreCase("Occupied")) {
+                room.setStatus("Occupied");
+                statusChanged = true;
+                System.out.println("Room " + room.getName() + " automatically set to Occupied at " + currentTime);
+            }
+        }
+        
+        if (!statusChanged) {
+            System.out.println("No status changes needed at " + currentTime);
+        }
+        
+        return statusChanged;
+    }
+    
+    private void removeBookingsForRoom(String roomName) {
+        // Create a list of bookings to remove
+        List<LoginController.Booking> bookingsToRemove = new ArrayList<>();
+        
+        for (LoginController.Booking booking : LoginController.bookings) {
+            if (booking.roomName.equalsIgnoreCase(roomName)) {
+                bookingsToRemove.add(booking);
+            }
+        }
+        
+        // Remove all bookings for this room
+        if (!bookingsToRemove.isEmpty()) {
+            LoginController.bookings.removeAll(bookingsToRemove);
+            LoginController.saveBookings();
         }
     }
 
@@ -100,13 +176,12 @@ public class MainController {
                     return;
                 }
                 // Check for duplicate room name
-                for (Room r : rooms) {
-                    if (r.getName().equalsIgnoreCase(room.getName())) {
-                        showAlert("A room with this name already exists.");
-                        return;
-                    }
+                if (roomsMap.containsKey(room.getName().toLowerCase())) {
+                    showAlert("A room with this name already exists.");
+                    return;
                 }
-                rooms.add(room);
+                roomsMap.put(room.getName().toLowerCase(), room);
+                saveRoomsToCSV();
                 refreshRoomList();
             });
         } catch (Exception e) {
@@ -128,16 +203,35 @@ public class MainController {
                     showAlert("Invalid input. Please enter valid room details.");
                     return;
                 }
+                
+                // Get old name to remove from Map if name changed
+                String oldNameKey = selectedRoom.getName().toLowerCase();
+                String newNameKey = updatedRoom.getName().toLowerCase();
+                
                 // Check for duplicate room name (excluding the currently selected room)
-                for (Room r : rooms) {
-                    if (r != selectedRoom && r.getName().equalsIgnoreCase(updatedRoom.getName())) {
-                        showAlert("A room with this name already exists.");
-                        return;
-                    }
+                if (!oldNameKey.equals(newNameKey) && roomsMap.containsKey(newNameKey)) {
+                    showAlert("A room with this name already exists.");
+                    return;
                 }
+                
+                // If name is changed, remove old entry and add new one
+                if (!oldNameKey.equals(newNameKey)) {
+                    roomsMap.remove(oldNameKey);
+                }
+                
+                // Update properties
                 selectedRoom.setName(updatedRoom.getName());
                 selectedRoom.setCapacity(updatedRoom.getCapacity());
                 selectedRoom.setStatus(updatedRoom.getStatus());
+                
+                // If updating to Vacant status, remove any bookings for this room
+                if (updatedRoom.getStatus().equalsIgnoreCase("Vacant")) {
+                    removeBookingsForRoom(updatedRoom.getName());
+                }
+                
+                // Add to map with new name
+                roomsMap.put(newNameKey, selectedRoom);
+                saveRoomsToCSV();
                 refreshRoomList();
             });
         } catch (Exception e) {
@@ -152,7 +246,8 @@ public class MainController {
             return;
         }
         try {
-            rooms.remove(selectedRoom);
+            roomsMap.remove(selectedRoom.getName().toLowerCase());
+            saveRoomsToCSV();
             clearFields();
             selectedRoom = null;
             refreshRoomList();
@@ -170,7 +265,7 @@ public class MainController {
         if (file != null) {
             try (FileWriter writer = new FileWriter(file)) {
                 writer.write("Room Name,Capacity,Status\n");
-                for (Room room : rooms) {
+                for (Room room : roomsMap.values()) {
                     writer.write(room.getName() + "," + room.getCapacity() + "," + room.getStatus() + "\n");
                 }
             } catch (IOException e) {
@@ -189,7 +284,7 @@ public class MainController {
             }
             BufferedReader reader = new BufferedReader(new InputStreamReader(is));
             String line;
-            rooms.clear();
+            roomsMap.clear();
             boolean first = true;
             while ((line = reader.readLine()) != null) {
                 if (first) { first = false; continue; } // skip header
@@ -199,7 +294,7 @@ public class MainController {
                         String name = parts[0].trim();
                         int capacity = Integer.parseInt(parts[1].trim());
                         String status = parts[2].trim();
-                        rooms.add(new Room(name, capacity, status));
+                        roomsMap.put(name.toLowerCase(), new Room(name, capacity, status));
                     } catch (NumberFormatException nfe) {
                         // skip invalid row
                     }
@@ -214,19 +309,79 @@ public class MainController {
     @FXML
     private void onSignOut() {
         try {
+            // Cancel the booking timer
+            stopBookingCheckTimer();
+            
+            // Reset user session data
+            LoginController.currentUser = null;
+            LoginController.currentRole = null;
+            
             FXMLLoader loader = new FXMLLoader(getClass().getResource("login.fxml"));
-            Scene scene = new Scene(loader.load(), 800, 600);
+            Scene scene = new Scene(loader.load(), 1121, 761);
             Stage stage = (Stage) roomListPane.getScene().getWindow();
             stage.setScene(scene);
+            stage.centerOnScreen();
             stage.setTitle("Login");
         } catch (Exception e) {
             showAlert("Failed to load login screen: " + e.getMessage());
         }
     }
+    
+    @FXML
+    private void onViewDashboard() {
+        try {
+            // Cancel the booking timer before switching to dashboard
+            stopBookingCheckTimer();
+            
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("dashboard.fxml"));
+            Scene scene = new Scene(loader.load(), 1121, 761);
+            Stage stage = (Stage) roomListPane.getScene().getWindow();
+            stage.setScene(scene);
+            stage.setTitle("Dashboard - Room Reservation System");
+            stage.centerOnScreen();
+        } catch (Exception e) {
+            showAlert("Failed to load dashboard: " + e.getMessage());
+        }
+    }
+    
+    @FXML
+    private void onRefresh() {
+        // Reload bookings and room data
+        LoginController.loadBookings();
+        loadRoomsFromCSV();
+        
+        // Check for bookings that match current time and update room statuses
+        LocalDateTime now = LocalDateTime.now().withSecond(0).withNano(0);
+        boolean statusChanged = checkAndUpdateRoomStatuses(roomsMap, now);
+        
+        if (statusChanged) {
+            saveRoomsToCSV(); // Save any status changes
+        }
+        
+        // Refresh the UI
+        refreshRoomList();
+        
+        // Show confirmation to user
+        Alert info = new Alert(Alert.AlertType.INFORMATION);
+        info.setTitle("Refresh Complete");
+        info.setHeaderText(null);
+        info.setContentText("Room statuses have been refreshed.");
+        info.getDialogPane().setStyle("-fx-background-color: white;");
+        ((Button) info.getDialogPane().lookupButton(ButtonType.OK)).setStyle(
+            "-fx-background-color: #1a365d; -fx-text-fill: white; -fx-font-weight: bold;");
+        info.showAndWait();
+    }
+    
+    private void stopBookingCheckTimer() {
+        if (bookingTimer != null) {
+            bookingTimer.cancel();
+            bookingTimer = null;
+        }
+    }
 
     private void refreshRoomList() {
         roomListPane.getChildren().clear();
-        for (Room room : rooms) {
+        for (Room room : roomsMap.values()) {
             VBox card = createRoomCard(room);
             roomListPane.getChildren().add(card);
         }
@@ -356,18 +511,34 @@ public class MainController {
                 if (date != null) {
                     LocalTime time = LocalTime.of(hour, minute);
                     LocalDateTime bookingTime = LocalDateTime.of(date, time);
-                    LoginController.addBooking(room.getName(), bookingTime);
-                    updateRoomStatusesByBooking();
-                    refreshRoomList();
                     
-                    // Show success confirmation
-                    Alert success = new Alert(Alert.AlertType.INFORMATION);
-                    success.setTitle("Booking Confirmed");
-                    success.setHeaderText(null);
-                    success.setContentText("Room " + room.getName() + " has been successfully booked.");
-                    ((Stage) success.getDialogPane().getScene().getWindow()).getIcons().add(null);
-                    success.getDialogPane().setStyle("-fx-background-color: white;");
-                    success.showAndWait();
+                    // Get current time without seconds or milliseconds for comparison
+                    LocalDateTime now = LocalDateTime.now().withSecond(0).withNano(0);
+                    
+                    // Validate that booking time is in the future
+                    if (bookingTime.isBefore(now) || bookingTime.isEqual(now)) {
+                        Alert error = new Alert(Alert.AlertType.ERROR);
+                        error.setTitle("Invalid Booking Time");
+                        error.setHeaderText(null);
+                        error.setContentText("Booking time must be in the future.");
+                        error.getDialogPane().setStyle("-fx-background-color: white;");
+                        ((Button) error.getDialogPane().lookupButton(ButtonType.OK)).setStyle(
+                            "-fx-background-color: #1a365d; -fx-text-fill: white; -fx-font-weight: bold;");
+                        error.showAndWait();
+                    } else {
+                        // Time is valid, proceed with booking
+                        LoginController.addBooking(room.getName(), bookingTime);
+                        updateRoomStatusesByBooking();
+                        refreshRoomList();
+                        
+                        // Show success confirmation
+                        Alert success = new Alert(Alert.AlertType.INFORMATION);
+                        success.setTitle("Booking Confirmed");
+                        success.setHeaderText(null);
+                        success.setContentText("Room " + room.getName() + " has been successfully booked.");
+                        success.getDialogPane().setStyle("-fx-background-color: white;");
+                        success.showAndWait();
+                    }
                 }
             }
             return null;
@@ -512,5 +683,67 @@ public class MainController {
             alert.getDialogPane().setStyle("-fx-background-color: white;");
             alert.showAndWait();
         }
+    }
+    
+    public void loadRoomsFromCSV() {
+        roomsMap.clear();
+        File file = new File(ROOMS_FILE);
+        if (!file.exists()) {
+            // Create directory if it doesn't exist
+            File directory = file.getParentFile();
+            if (!directory.exists()) {
+                directory.mkdirs();
+            }
+            return;
+        }
+        
+        try (BufferedReader reader = new BufferedReader(new java.io.FileReader(file))) {
+            String line;
+            boolean first = true;
+            while ((line = reader.readLine()) != null) {
+                if (first) { first = false; continue; } // skip header
+                String[] parts = line.split(",");
+                if (parts.length == 3) {
+                    try {
+                        String name = parts[0].trim();
+                        int capacity = Integer.parseInt(parts[1].trim());
+                        String status = parts[2].trim();
+                        roomsMap.put(name.toLowerCase(), new Room(name, capacity, status));
+                    } catch (NumberFormatException nfe) {
+                        // Skip invalid row
+                    }
+                }
+            }
+        } catch (Exception e) {
+            showAlert("Error loading roomsMap: " + e.getMessage());
+        }
+    }
+
+    // Method for saving rooms to CSV - static version accessible to DashboardController
+    public static void saveRoomsToCSV(Map<String, Room> rooms) {
+        try {
+            // Ensure directory exists
+            String roomsFilePath = "src/main/resources/org/ira/room_reservation_system/roomsMap.csv";
+            File file = new File(roomsFilePath);
+            File directory = file.getParentFile();
+            if (!directory.exists()) {
+                directory.mkdirs();
+            }
+            
+            // Write data
+            try (FileWriter writer = new FileWriter(roomsFilePath, false)) {
+                writer.write("Room Name,Capacity,Status\n");
+                for (Room room : rooms.values()) {
+                    writer.write(room.getName() + "," + room.getCapacity() + "," + room.getStatus() + "\n");
+                }
+            }
+        } catch (IOException e) {
+            System.err.println("Failed to save roomsMap: " + e.getMessage());
+        }
+    }
+    
+    // Instance method that uses the static method
+    private void saveRoomsToCSV() {
+        saveRoomsToCSV(roomsMap);
     }
 }

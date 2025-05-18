@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.chart.BarChart?>
+<?import javafx.scene.chart.CategoryAxis?>
+<?import javafx.scene.chart.NumberAxis?>
+<?import javafx.scene.chart.PieChart?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<StackPane style="-fx-background-color: linear-gradient(to bottom, #0a192f, #172a45);" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.ira.room_reservation_system.DashboardController">
+    <VBox alignment="TOP_CENTER" maxWidth="1200" spacing="20">
+        <Region minHeight="25" />        <Label style="-fx-font-size: 20px; -fx-font-family: 'Segoe UI', 'Arial', sans-serif; -fx-font-weight: bold; -fx-text-fill: white; -fx-padding: 0 0 8 0;" text="UNIVERSITY OF CEBU" />
+          <HBox alignment="CENTER" spacing="15" style="-fx-background-color: white; -fx-background-radius: 8; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 12, 0.15, 0, 3); -fx-padding: 18 24;">
+            <Label style="-fx-font-size: 18px; -fx-font-family: 'Segoe UI', 'Arial', sans-serif; -fx-font-weight: bold; -fx-text-fill: #1a365d;" text="Room Reservation Dashboard" />
+            <Region HBox.hgrow="ALWAYS" />
+            <Label fx:id="userWelcomeLabel" style="-fx-font-size: 14px; -fx-font-family: 'Segoe UI', 'Arial', sans-serif; -fx-text-fill: #4a5568;" text="Welcome, User" />
+            <Button onAction="#onExportData" style="-fx-background-color: #1a365d; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 5; -fx-font-size: 14px; -fx-cursor: hand; -fx-padding: 8 18;" text="Export Data" />
+            <Button onAction="#onBackToRooms" style="-fx-background-color: #f8f9fa; -fx-text-fill: #1a365d; -fx-font-weight: bold; -fx-background-radius: 5; -fx-font-size: 14px; -fx-cursor: hand; -fx-padding: 8 18; -fx-border-color: #cbd5e0; -fx-border-radius: 5;" text="Back to Rooms" />
+        </HBox>
+        
+        <!-- Horizontal Summary Cards -->
+        <HBox alignment="CENTER" spacing="15" style="-fx-padding: 10 15;">
+            <HBox style="-fx-background-color: white; -fx-background-radius: 8; -fx-padding: 15; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 10, 0.12, 0, 2);" spacing="10" HBox.hgrow="ALWAYS">
+                <VBox spacing="5" HBox.hgrow="ALWAYS">
+                    <Label style="-fx-font-size: 14px; -fx-text-fill: #4a5568;" text="Total Rooms" />
+                    <Label fx:id="totalRoomsLabel" style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #1a365d;" text="0" />
+                </VBox>
+            </HBox>
+            
+            <HBox style="-fx-background-color: white; -fx-background-radius: 8; -fx-padding: 15; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 10, 0.12, 0, 2);" spacing="10" HBox.hgrow="ALWAYS">
+                <VBox spacing="5" HBox.hgrow="ALWAYS">
+                    <Label style="-fx-font-size: 14px; -fx-text-fill: #4a5568;" text="Vacant Rooms" />
+                    <Label fx:id="vacantRoomsLabel" style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2b6cb0;" text="0" />
+                </VBox>
+            </HBox>
+            
+            <HBox style="-fx-background-color: white; -fx-background-radius: 8; -fx-padding: 15; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 10, 0.12, 0, 2);" spacing="10" HBox.hgrow="ALWAYS">
+                <VBox spacing="5" HBox.hgrow="ALWAYS">
+                    <Label style="-fx-font-size: 14px; -fx-text-fill: #4a5568;" text="Occupied Rooms" />
+                    <Label fx:id="occupiedRoomsLabel" style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #e65100;" text="0" />
+                </VBox>
+            </HBox>
+            
+            <HBox style="-fx-background-color: white; -fx-background-radius: 8; -fx-padding: 15; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 10, 0.12, 0, 2);" spacing="10" HBox.hgrow="ALWAYS">
+                <VBox spacing="5" HBox.hgrow="ALWAYS">
+                    <Label style="-fx-font-size: 14px; -fx-text-fill: #4a5568;" text="Total Bookings" />
+                    <Label fx:id="totalBookingsLabel" style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #1a365d;" text="0" />
+                </VBox>
+            </HBox>
+        </HBox>
+        
+        <!-- Recent Activity - Full width now -->
+        <VBox style="-fx-background-color: white; -fx-background-radius: 8; -fx-padding: 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 10, 0.12, 0, 2);" minHeight="350" maxWidth="1150" VBox.vgrow="ALWAYS">
+            <Label style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1a365d;" text="Recent Bookings" />
+            <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-background: transparent; -fx-border-color: transparent;" VBox.vgrow="ALWAYS">
+                <VBox fx:id="recentBookingsContainer" spacing="10">
+                    <!-- Recent bookings will be added programmatically -->
+                </VBox>
+            </ScrollPane>
+        </VBox>
+        
+        <HBox alignment="CENTER" spacing="5" style="-fx-padding: 15 0 10 0;">
+            <Label style="-fx-font-size: 12px; -fx-font-family: 'Segoe UI', 'Arial', sans-serif; -fx-text-fill: rgba(255,255,255,0.7); -fx-font-weight: 400;" text="© 2025 University of Cebu • Room Reservation System" />
+        </HBox>
+        <Region minHeight="20" />
+    </VBox>
+</StackPane>
