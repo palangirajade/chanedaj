@@ -20,7 +20,8 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class DashboardController {    @FXML
+public class DashboardController {    
+    @FXML
     private Label totalRoomsLabel;
     @FXML
     private Label vacantRoomsLabel;

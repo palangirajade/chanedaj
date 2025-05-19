@@ -463,12 +463,22 @@ public class MainController {
         datePicker.setStyle("-fx-background-color: #f8f9fa; -fx-border-color: #cbd5e0; -fx-border-radius: 4; -fx-padding: 4;");
         datePicker.setPrefWidth(200);
         
-        Spinner<Integer> hourSpinner = new Spinner<>(0, 23, LocalDateTime.now().getHour());
+        // Get current hour and ensure it's within operating hours (7:30 AM - 9:30 PM)
+        int currentHour = LocalDateTime.now().getHour();
+        // Default to 7 if current hour is before opening, or current hour if within range
+        int initialHour = (currentHour < 7) ? 7 : (currentHour > 21) ? 7 : currentHour;
+        
+        Spinner<Integer> hourSpinner = new Spinner<>(7, 21, initialHour);
         hourSpinner.setEditable(true);
         hourSpinner.setStyle("-fx-background-color: #f8f9fa; -fx-border-color: #cbd5e0; -fx-border-radius: 4;");
         hourSpinner.setPrefWidth(200);
         
-        Spinner<Integer> minuteSpinner = new Spinner<>(0, 59, LocalDateTime.now().getMinute());
+        // Get current minute and ensure it respects the 30-minute minimum for opening time
+        int currentMinute = LocalDateTime.now().getMinute();
+        // If hour is 7 (opening hour), enforce minimum of 30 minutes
+        int initialMinute = (initialHour == 7 && currentMinute < 30) ? 30 : currentMinute;
+        
+        Spinner<Integer> minuteSpinner = new Spinner<>(0, 59, initialMinute);
         minuteSpinner.setEditable(true);
         minuteSpinner.setStyle("-fx-background-color: #f8f9fa; -fx-border-color: #cbd5e0; -fx-border-radius: 4;");
         minuteSpinner.setPrefWidth(200);
@@ -482,17 +492,21 @@ public class MainController {
         Label roomInfoLabel = new Label("Room: " + room.getName() + " (Capacity: " + room.getCapacity() + ")");
         roomInfoLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #2d3748; -fx-font-weight: bold;");
         
+        Label operatingHoursLabel = new Label("Booking hours: 7:30 AM - 9:30 PM");
+        operatingHoursLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #4a5568; -fx-font-style: italic;");
+        
         // Labels for fields with consistent navy blue styling
         Label dateLabel = new Label("Select Date:");
         dateLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #2d3748;");
         
-        Label hourLabel = new Label("Hour (0-23):");
+        Label hourLabel = new Label("Hour (7-21):");
         hourLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #2d3748;");
         
         Label minuteLabel = new Label("Minute (0-59):");
         minuteLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #2d3748;");
         
         VBox vbox = new VBox(8, titleLabel, subtitleLabel, roomInfoLabel, 
+                            operatingHoursLabel,
                             new Separator(), 
                             dateLabel, datePicker, 
                             hourLabel, hourSpinner, 
@@ -515,8 +529,23 @@ public class MainController {
                     // Get current time without seconds or milliseconds for comparison
                     LocalDateTime now = LocalDateTime.now().withSecond(0).withNano(0);
                     
+                    // Define operating hours (7:30 AM to 9:30 PM)
+                    LocalTime openingTime = LocalTime.of(7, 30);
+                    LocalTime closingTime = LocalTime.of(21, 30);
+                    
+                    // Check if booking time is during operating hours
+                    if (time.isBefore(openingTime) || time.isAfter(closingTime)) {
+                        Alert error = new Alert(Alert.AlertType.ERROR);
+                        error.setTitle("Invalid Booking Time");
+                        error.setHeaderText(null);
+                        error.setContentText("Booking time must be between 7:30 AM and 9:30 PM.");
+                        error.getDialogPane().setStyle("-fx-background-color: white;");
+                        ((Button) error.getDialogPane().lookupButton(ButtonType.OK)).setStyle(
+                            "-fx-background-color: #1a365d; -fx-text-fill: white; -fx-font-weight: bold;");
+                        error.showAndWait();
+                    }
                     // Validate that booking time is in the future
-                    if (bookingTime.isBefore(now) || bookingTime.isEqual(now)) {
+                    else if (bookingTime.isBefore(now) || bookingTime.isEqual(now)) {
                         Alert error = new Alert(Alert.AlertType.ERROR);
                         error.setTitle("Invalid Booking Time");
                         error.setHeaderText(null);
