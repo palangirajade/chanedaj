@@ -1,14 +1,4 @@
 Room Name,Capacity,Status
-100,2,Vacant
-101,3,Occupied
-102,2,Vacant
-103,4,Occupied
-104,1,Vacant
-105,2,Occupied
-106,3,Vacant
-107,4,Occupied
-108,2,Vacant
-109,1,Occupied
 110,3,Vacant
 111,2,Vacant
 112,4,Occupied
@@ -21,7 +11,18 @@ Room Name,Capacity,Status
 119,2,Vacant
 120,1,Occupied
 121,3,Vacant
+100,2,Vacant
 122,2,Occupied
+101,3,Occupied
 123,4,Vacant
+102,2,Vacant
 124,2,Occupied
+103,4,Occupied
 125,3,Vacant
+400,40,Vacant
+104,1,Vacant
+105,2,Occupied
+106,3,Vacant
+107,4,Occupied
+108,2,Vacant
+109,1,Occupied
