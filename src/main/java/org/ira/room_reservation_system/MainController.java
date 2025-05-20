@@ -302,11 +302,11 @@ public class MainController {
                 }
             }
             
-            // Flag that we're using test data to prevent saving it to main roomsMap.csv
+            // Flag that we're using test data to prevent saving to main roomsMap.csv file
             isUsingTestData = true;
             
             refreshRoomList();
-            showAlert("Test data loaded. Changes to test data will not be saved to the main rooms file.\n" +
+            showAlert("Test data loaded. Changes won't be saved to the main rooms file.\n" +
                      "Use 'Refresh' button to return to main data.");
         } catch (Exception e) {
             showAlert("Failed to load test data: " + e.getMessage());
@@ -861,11 +861,36 @@ public class MainController {
     
     // Instance method that uses the static method
     private void saveRoomsToCSV() {
-        // Don't save to roomsMap.csv if we're using test data
         if (!isUsingTestData) {
+            // Save to main roomsMap.csv if not using test data
             saveRoomsToCSV(roomsMap);
         } else {
-            System.out.println("Not saving test data to roomsMap.csv");
+            // When using test data, save to test_rooms.csv to keep the test data updated
+            saveTestRoomsToCSV(roomsMap);
+            System.out.println("Saved changes to test_rooms.csv instead of roomsMap.csv");
+        }
+    }
+    
+    // Method for saving test rooms to CSV - preserves the test data with any modifications
+    private void saveTestRoomsToCSV(Map<String, Room> rooms) {
+        try {
+            // Ensure directory exists
+            String testRoomsFilePath = "src/main/resources/org/ira/room_reservation_system/test_rooms.csv";
+            File file = new File(testRoomsFilePath);
+            File directory = file.getParentFile();
+            if (!directory.exists()) {
+                directory.mkdirs();
+            }
+            
+            // Write data
+            try (FileWriter writer = new FileWriter(testRoomsFilePath, false)) {
+                writer.write("Room Name,Capacity,Status\n");
+                for (Room room : rooms.values()) {
+                    writer.write(room.getName() + "," + room.getCapacity() + "," + room.getStatus() + "\n");
+                }
+            }
+        } catch (IOException e) {
+            System.err.println("Failed to save test_rooms.csv: " + e.getMessage());
         }
     }
 }
