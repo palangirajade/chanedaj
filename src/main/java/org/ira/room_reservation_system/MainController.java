@@ -39,6 +39,7 @@ public class MainController {
     private static final String ROOMS_FILE = "src/main/resources/org/ira/room_reservation_system/roomsMap.csv";
     private final Map<String, Room> roomsMap = new HashMap<>();
     private Room selectedRoom = null;
+    private boolean isUsingTestData = false;
     
     // Getter for roomsMap to allow access from DashboardController
     public Map<String, Room> getRoomsMap() {
@@ -300,7 +301,13 @@ public class MainController {
                     }
                 }
             }
+            
+            // Flag that we're using test data to prevent saving it to main roomsMap.csv
+            isUsingTestData = true;
+            
             refreshRoomList();
+            showAlert("Test data loaded. Changes to test data will not be saved to the main rooms file.\n" +
+                     "Use 'Refresh' button to return to main data.");
         } catch (Exception e) {
             showAlert("Failed to load test data: " + e.getMessage());
         }
@@ -794,6 +801,9 @@ public class MainController {
     
     public void loadRoomsFromCSV() {
         roomsMap.clear();
+        // Reset test data flag when loading from the main CSV file
+        isUsingTestData = false;
+        
         File file = new File(ROOMS_FILE);
         if (!file.exists()) {
             // Create directory if it doesn't exist
@@ -851,6 +861,11 @@ public class MainController {
     
     // Instance method that uses the static method
     private void saveRoomsToCSV() {
-        saveRoomsToCSV(roomsMap);
+        // Don't save to roomsMap.csv if we're using test data
+        if (!isUsingTestData) {
+            saveRoomsToCSV(roomsMap);
+        } else {
+            System.out.println("Not saving test data to roomsMap.csv");
+        }
     }
 }
