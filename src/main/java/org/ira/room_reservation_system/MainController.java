@@ -381,7 +381,13 @@ public class MainController {
 
     private void refreshRoomList() {
         roomListPane.getChildren().clear();
-        for (Room room : roomsMap.values()) {
+        
+        // Create a sorted list of rooms by name
+        List<Room> sortedRooms = new ArrayList<>(roomsMap.values());
+        sortedRooms.sort((r1, r2) -> r1.getName().compareToIgnoreCase(r2.getName()));
+        
+        // Add cards for each room in alphabetical order
+        for (Room room : sortedRooms) {
             VBox card = createRoomCard(room);
             roomListPane.getChildren().add(card);
         }
@@ -604,7 +610,11 @@ public class MainController {
         private final TextField nameField = new TextField();
         private final TextField capacityField = new TextField();
         private final ComboBox<String> statusBox = new ComboBox<>();
-
+        private final Spinner<Integer> hourSpinner;
+        private final Spinner<Integer> minuteSpinner;
+        private final VBox timeControlsContainer = new VBox(8);
+        private Label operatingHoursLabel;
+        
         public RoomDialog(Room room) {
             setTitle(room == null ? "Add Room" : "Update Room");
             setHeaderText(null);
@@ -628,6 +638,44 @@ public class MainController {
             statusBox.setStyle("-fx-background-color: #f8f9fa; -fx-border-color: #cbd5e0; -fx-border-radius: 4; -fx-padding: 4;");
             statusBox.setPrefWidth(200);
 
+            // Time controls setup
+            // Get current hour and ensure it's within operating hours (7:30 AM - 9:30 PM)
+            int currentHour = LocalDateTime.now().getHour();
+            // Default to 7 if current hour is before opening, or current hour if within range
+            int initialHour = (currentHour < 7) ? 7 : (currentHour > 21) ? 7 : currentHour;
+            hourSpinner = new Spinner<>(7, 21, initialHour);
+            hourSpinner.setEditable(true);
+            hourSpinner.setStyle("-fx-background-color: #f8f9fa; -fx-border-color: #cbd5e0; -fx-border-radius: 4;");
+            hourSpinner.setPrefWidth(200);
+            
+            // Get current minute and ensure it respects the 30-minute minimum for opening time
+            int currentMinute = LocalDateTime.now().getMinute();
+            // If hour is 7 (opening hour), enforce minimum of 30 minutes
+            int initialMinute = (initialHour == 7 && currentMinute < 30) ? 30 : currentMinute;
+            minuteSpinner = new Spinner<>(0, 59, initialMinute);
+            minuteSpinner.setEditable(true);
+            minuteSpinner.setStyle("-fx-background-color: #f8f9fa; -fx-border-color: #cbd5e0; -fx-border-radius: 4;");
+            minuteSpinner.setPrefWidth(200);
+
+            // Labels for time fields
+            Label hourLabel = new Label("Hour (7-21):");
+            hourLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #2d3748;");
+            
+            Label minuteLabel = new Label("Minute (0-59):");
+            minuteLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #2d3748;");
+            
+            // Operating hours note
+            operatingHoursLabel = new Label("Note: For occupied rooms, time must be between 7:30 AM - 9:30 PM");
+            operatingHoursLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #4a5568; -fx-font-style: italic;");
+            
+            // Add time controls to the container
+            timeControlsContainer.getChildren().addAll(
+                new Separator(),
+                operatingHoursLabel,
+                hourLabel, hourSpinner,
+                minuteLabel, minuteSpinner
+            );
+            
             statusBox.getItems().addAll("Vacant", "Occupied");
             if (room != null) {
                 nameField.setText(room.getName());
@@ -636,6 +684,19 @@ public class MainController {
             } else {
                 statusBox.setValue("Vacant");
             }
+            
+            // Show/hide time controls based on status
+            timeControlsContainer.setVisible(statusBox.getValue().equals("Occupied"));
+            timeControlsContainer.setManaged(statusBox.getValue().equals("Occupied"));
+            
+            // Add listener to show/hide time fields based on status selection
+            statusBox.valueProperty().addListener((obs, oldVal, newVal) -> {
+                boolean isOccupied = newVal.equals("Occupied");
+                timeControlsContainer.setVisible(isOccupied);
+                timeControlsContainer.setManaged(isOccupied);
+                // Resize dialog when status changes
+                getDialogPane().getScene().getWindow().sizeToScene();
+            });
 
             VBox content = new VBox(12);
             content.setPadding(new Insets(15));
@@ -660,7 +721,7 @@ public class MainController {
             
             Label statusLabel = new Label("Status:");
             statusLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #2d3748;");
-            content.getChildren().addAll(statusLabel, statusBox);
+            content.getChildren().addAll(statusLabel, statusBox, timeControlsContainer);
             
             getDialogPane().setPrefWidth(320);
             getDialogPane().setContent(content);
@@ -685,6 +746,23 @@ public class MainController {
                     if (status == null) {
                         showValidationError("Status selection is required.");
                         return null;
+                    }
+                    
+                    // Validate time if status is Occupied
+                    if (status.equals("Occupied")) {
+                        int hour = hourSpinner.getValue();
+                        int minute = minuteSpinner.getValue();
+                        
+                        // Create LocalTime for validation
+                        LocalTime time = LocalTime.of(hour, minute);
+                        LocalTime openingTime = LocalTime.of(7, 30);
+                        LocalTime closingTime = LocalTime.of(21, 30);
+                        
+                        // Check if time is within operating hours
+                        if (time.isBefore(openingTime) || time.isAfter(closingTime)) {
+                            showValidationError("For occupied rooms, time must be between 7:30 AM and 9:30 PM.");
+                            return null;
+                        }
                     }
                     
                     try {
