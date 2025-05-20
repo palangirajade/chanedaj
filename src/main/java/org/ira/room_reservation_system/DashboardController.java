@@ -151,11 +151,10 @@ public class DashboardController {
         
         Label dateLabel = new Label("Date: " + booking.dateTime.format(DATE_FORMATTER));
         dateLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #4a5568;");
-                
-        Label timeLabel = new Label("Time: " + booking.dateTime.format(TIME_FORMATTER));
+                  Label timeLabel = new Label("Time: " + booking.dateTime.format(TIME_FORMATTER));
         timeLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #4a5568;");
         
-        Label userLabel = new Label("User: " + LoginController.currentUser);
+        Label userLabel = new Label("User: " + booking.user);
         userLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #4a5568;");
         
         details.getChildren().addAll(roomLabel, dateLabel, timeLabel, userLabel);
@@ -188,13 +187,12 @@ public class DashboardController {
                 
                 writer.write("\nRECENT BOOKINGS\n");
                 writer.write("Room,Date and Time,User\n");
-                
-                // Add only the 5 most recent bookings (already sorted)
+                  // Add only the 5 most recent bookings (already sorted)
                 int count = 0;
                 for (LoginController.Booking booking : LoginController.bookings) {
                     if (count >= 5) break;
                     writer.write(booking.roomName + "," + booking.dateTime.format(DATE_TIME_FORMATTER) 
-                        + "," + LoginController.currentUser + "\n");
+                        + "," + booking.user + "\n");
                     count++;
                 }
                 

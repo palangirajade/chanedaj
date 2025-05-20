@@ -40,29 +40,35 @@ public class LoginController {
     private static final String USERS_FILE = "src/main/resources/org/ira/room_reservation_system/users.csv";
     private static final Map<String, String[]> userInfo = new HashMap<>();
     private static boolean usersLoaded = false;    private static final String BOOKINGS_FILE = "src/main/resources/org/ira/room_reservation_system/bookings.csv";
-    static final List<Booking> bookings = new ArrayList<>();
-
+    static final List<Booking> bookings = new ArrayList<>();    
     public static String currentRole = null;
     public static String currentUser = null;
     public static class Booking {
         public String roomName;
         public LocalDateTime dateTime;
+        public String user;
+        
         public Booking(String roomName, LocalDateTime dateTime) {
             this.roomName = roomName;
             this.dateTime = dateTime;
+            this.user = currentUser != null ? currentUser : "admin"; // Default to admin if no user is logged in
+        }
+        
+        public Booking(String roomName, LocalDateTime dateTime, String user) {
+            this.roomName = roomName;
+            this.dateTime = dateTime;
+            this.user = user;
         }
     }
 
     public static void addBooking(String roomName, LocalDateTime dateTime) {
         bookings.add(new Booking(roomName, dateTime));
         saveBookings();
-    }
-
-    public static void saveBookings() {
+    }    public static void saveBookings() {
         try (PrintWriter pw = new PrintWriter(new FileOutputStream(BOOKINGS_FILE, false))) {
-            pw.println("room,datetime");
+            pw.println("room,datetime,user");
             for (Booking b : bookings) {
-                pw.println(b.roomName + "," + b.dateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm")));
+                pw.println(b.roomName + "," + b.dateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm")) + "," + b.user);
             }
         } catch (Exception ignored) {}
     }
@@ -76,13 +82,14 @@ public class LoginController {
             while ((line = reader.readLine()) != null) {
                 if (first) { first = false; continue; }
                 String[] parts = line.split(",");
-                if (parts.length == 2) {
+                if (parts.length >= 2) {
                     LocalDateTime dt = LocalDateTime.parse(parts[1], DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm"));
-                    bookings.add(new Booking(parts[0], dt));
+                    String user = (parts.length > 2) ? parts[2] : "admin"; // Default to admin if no user specified
+                    bookings.add(new Booking(parts[0], dt, user));
                 }
             }
         } catch (Exception ignored) {}
-    }    private void loadUsers() {
+    }private void loadUsers() {
         if (usersLoaded) return;
         usersLoaded = true;
         userInfo.clear();
