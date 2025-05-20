@@ -469,12 +469,13 @@ public class MainController {
         datePicker.setStyle("-fx-background-color: #f8f9fa; -fx-border-color: #cbd5e0; -fx-border-radius: 4; -fx-padding: 4;");
         datePicker.setPrefWidth(200);
         
-        // Get current hour and ensure it's within operating hours (7:30 AM - 9:30 PM)
+        // Get current hour (0-23)
         int currentHour = LocalDateTime.now().getHour();
-        // Default to 7 if current hour is before opening, or current hour if within range
-        int initialHour = (currentHour < 7) ? 7 : (currentHour > 21) ? 7 : currentHour;
+        // Use user's current hour as initial value
+        int initialHour = currentHour;
         
-        Spinner<Integer> hourSpinner = new Spinner<>(7, 21, initialHour);
+        // Allow any hour (0-23) to be selected, not just operating hours
+        Spinner<Integer> hourSpinner = new Spinner<>(0, 23, initialHour);
         hourSpinner.setEditable(true);
         hourSpinner.setStyle("-fx-background-color: #f8f9fa; -fx-border-color: #cbd5e0; -fx-border-radius: 4;");
         hourSpinner.setPrefWidth(200);
@@ -505,7 +506,7 @@ public class MainController {
         Label dateLabel = new Label("Select Date:");
         dateLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #2d3748;");
         
-        Label hourLabel = new Label("Hour (7-21):");
+        Label hourLabel = new Label("Hour (0-23):");
         hourLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #2d3748;");
         
         Label minuteLabel = new Label("Minute (0-59):");
@@ -639,11 +640,10 @@ public class MainController {
             statusBox.setPrefWidth(200);
 
             // Time controls setup
-            // Get current hour and ensure it's within operating hours (7:30 AM - 9:30 PM)
+            // Use current hour as initial value
             int currentHour = LocalDateTime.now().getHour();
-            // Default to 7 if current hour is before opening, or current hour if within range
-            int initialHour = (currentHour < 7) ? 7 : (currentHour > 21) ? 7 : currentHour;
-            hourSpinner = new Spinner<>(7, 21, initialHour);
+            int initialHour = currentHour;
+            hourSpinner = new Spinner<>(0, 23, initialHour);
             hourSpinner.setEditable(true);
             hourSpinner.setStyle("-fx-background-color: #f8f9fa; -fx-border-color: #cbd5e0; -fx-border-radius: 4;");
             hourSpinner.setPrefWidth(200);
@@ -658,7 +658,7 @@ public class MainController {
             minuteSpinner.setPrefWidth(200);
 
             // Labels for time fields
-            Label hourLabel = new Label("Hour (7-21):");
+            Label hourLabel = new Label("Hour (0-23):");
             hourLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #2d3748;");
             
             Label minuteLabel = new Label("Minute (0-59):");
